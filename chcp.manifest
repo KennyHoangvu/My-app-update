@@ -1,34 +1,6 @@
 [
   {
-    "file": "cancel.mp3",
-    "hash": "a34682d82148683ae1baf4d1c95d0c34"
-  },
-  {
-    "file": "css/index.css",
-    "hash": "5dcf816b7ebd105b513554da547e56c7"
-  },
-  {
-    "file": "img/logo.png",
-    "hash": "5dc8261d27a88ae639dace1acde80f2b"
-  },
-  {
     "file": "index.html",
     "hash": "84aafafac650131acbec40398f773746"
-  },
-  {
-    "file": "js/index.js",
-    "hash": "4276399557b75ea78ea50d79c374b5a3"
-  },
-  {
-    "file": "phaohoa.mp3",
-    "hash": "5bdfd3e3aecff172a14f61b3f754529c"
-  },
-  {
-    "file": "play.mp3",
-    "hash": "a786c87f3a40cd6783d4104e4554d435"
-  },
-  {
-    "file": "xoa.mp3",
-    "hash": "2f3b3c70c18114432f025b535d626469"
   }
 ]
