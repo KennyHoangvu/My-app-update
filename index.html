@@ -201,8 +201,8 @@
 
     const translations = {
         vi: { 
-            mainTitle: "Bảng Chấm Công(ddax caajp nhaajp)", list: "Danh sách", cal: "Ma trận", stats: "Thống kê", total: "Tổng công kỳ này", month: "Kỳ lương tháng", 
-            sort_new: "Mới nhất", sort_old: "Cũ nhất12", thDate: "Ngày", thTime: "Giờ", thNote: "Ghi chú", set_title: "Cài đặt", 
+            mainTitle: "Bảng Chấm Công", list: "Danh sách", cal: "Ma trận", stats: "Thống kê", total: "Tổng công kỳ này", month: "Kỳ lương tháng", 
+            sort_new: "Mới nhất", sort_old: "Cũ nhất", thDate: "Ngày", thTime: "Giờ", thNote: "Ghi chú", set_title: "Cài đặt", 
             no_data: "Chưa có dữ liệu cho chu kỳ lương tháng này", 
             lblStatDays: "📅 Tổng ngày công", lblStatHours: "⏰ Tổng số giờ", lblStatMoney: "💰 Thu nhập dự tính",
             set_rate: "Lương/giờ", set_lang: "Ngôn ngữ", set_theme: "Giao diện", set_show: "Hiện lương", 
@@ -448,6 +448,14 @@
     function switchView(v) { playSfx('tapSound'); currentView = v; localStorage.setItem('app_view', v); displayData(); }
 
     window.onload = displayData;
+	document.addEventListener('chcp_updateIsReadyToInstall', function(event) {
+    alert('Đã tải xong bản mới! Hãy tắt hẳn app và mở lại.');
+}, false);
+
+document.addEventListener('chcp_updateLoadFailed', function(event) {
+    var error = event.detail.error;
+    console.log('Lỗi HCP: ' + error.description);
+}, false);
 </script>
 </body>
 </html>
