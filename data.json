@@ -1,9 +1,9 @@
 {
-  "store_name": "Cửa hàng Công nghệ Gemini",
+  "store_name": "Cửa hàng Công nghệ Riot90",
   "products": [
     {
       "id": 1,
-      "name": "Chuột không dây",
+      "name": "Chuột bach không dây",
       "price": 250000,
       "status": "Còn hàng"
     },
@@ -18,6 +18,13 @@
       "name": "Tai nghe Bluetooth",
       "price": 850000,
       "status": "Còn hàng"
+    },
+    
+    {
+      "id": 4,
+      "name": "Băng vệ sinh",
+      "price": 1850000,
+      "status": "Cháy hàng"
     }
   ]
 }
