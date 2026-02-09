@@ -1,0 +1,31 @@
+name: Tự động tạo Manifest HCP
+
+on:
+  push:
+    branches:
+      - main  # Hoặc 'master' tùy vào tên nhánh chính của bạn
+    paths:
+      - 'www/**' # Chỉ chạy khi bạn có thay đổi trong thư mục www
+
+jobs:
+  build-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kiểm tra code
+        uses: actions/checkout@v3
+
+      - name: Cài đặt Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Chạy script tạo Manifest
+        run: node build-hcp.js
+
+      - name: Đẩy file chcp.manifest mới lên GitHub
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add www/chcp.manifest
+          git commit -m "Hệ thống: Tự động cập nhật manifest [skip ci]" || exit 0
+          git push
