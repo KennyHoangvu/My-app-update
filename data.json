@@ -1,0 +1,23 @@
+{
+  "store_name": "Cửa hàng Công nghệ Gemini",
+  "products": [
+    {
+      "id": 1,
+      "name": "Chuột không dây",
+      "price": 250000,
+      "status": "Còn hàng"
+    },
+    {
+      "id": 2,
+      "name": "Bàn phím cơ",
+      "price": 1200000,
+      "status": "Hết hàng"
+    },
+    {
+      "id": 3,
+      "name": "Tai nghe Bluetooth",
+      "price": 850000,
+      "status": "Còn hàng"
+    }
+  ]
+}
