@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Bảng Công Pro - Riot90</title>
+    <style>
+        :root {
+            --bg-body: #f4f7f6; --bg-container: #ffffff; --text-main: #333333; --text-sub: #666666;
+            --border-color: #eeeeee; --table-head: #f8f9fa; --input-bg: #ffffff; --input-border: #eeeeee;
+            --btn-sort-bg: #f1f3f5; --cal-today: #fff3e0; --accent: #ff9800; --tab-bg: #ffffff;
+            --cal-custom-bg: #e3f2fd; --cal-custom-text: #1976d2; --footer-text: #888888;
+        }
+        [data-theme="dark"] {
+            --bg-body: #000000; --bg-container: #121212; --text-main: #ffffff; --text-sub: #b0b0b0;
+            --border-color: #222222; --table-head: #1a1a1a; --input-bg: #1a1a1a; --input-border: #333333;
+            --btn-sort-bg: #222222; --cal-today: #3e2723; --tab-bg: #121212;
+        }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-body); color: var(--text-main); 
+            margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; 
+        }
+
+        .container { 
+            width: 100%; max-width: 800px; margin: 0 auto; 
+            padding: 15px 15px calc(100px + env(safe-area-inset-bottom)) 15px; 
+            background: var(--bg-container); min-height: 100vh; position: relative; 
+        }
+
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); 
+            width: 100%; max-width: 800px; 
+            height: calc(75px + env(safe-area-inset-bottom)); 
+            background: var(--tab-bg); border-top: 1px solid var(--border-color); 
+            display: flex; justify-content: space-around; align-items: center; 
+            z-index: 990; padding-bottom: env(safe-area-inset-bottom); 
+        }
+
+        button:active, .tab-item:active, .cal-cell:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
+
+        .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; background: none; border: none; color: var(--text-sub); cursor: pointer; transition: 0.2s; }
+        .tab-item.active { color: var(--accent); }
+        .tab-item span { font-size: 10px; font-weight: bold; margin-top: 4px; }
+        .tab-icon { font-size: 20px; }
+        .tab-item-add { position: relative; top: -20px; background: linear-gradient(135deg, #ff9800, #f57c00); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255,152,0,0.4); color: white !important; font-size: 24px; border: 4px solid var(--bg-container); }
+
+        .table-wrapper { 
+            max-height: 55vh; 
+            overflow-y: auto; 
+            border: 1px solid var(--border-color); 
+            border-radius: 15px; 
+            background: var(--bg-container); 
+            -webkit-overflow-scrolling: touch; 
+        }
+
+        .table-wrapper::-webkit-scrollbar { width: 4px; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead th { position: sticky; top: 0; z-index: 5; background: var(--table-head); padding: 12px 10px; font-size: 11px; text-transform: uppercase; color: var(--text-sub); text-align: left; border-bottom: 1px solid var(--border-color); }
+        td { padding: 14px 10px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+
+        .no-data { text-align: center; padding: 40px 20px; color: var(--text-sub); font-style: italic; font-size: 14px; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .cal-day-name { text-align: center; font-size: 11px; font-weight: bold; color: var(--text-sub); padding: 5px 0; }
+        .cal-cell { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; background: var(--bg-container); cursor: pointer; transition: 0.1s; }
+        .cal-cell.today { border: 2px solid var(--accent); background: var(--cal-today); }
+        .cal-cell.has-work { background: var(--cal-custom-bg); color: var(--cal-custom-text); }
+        .cal-cell .work-hours { font-size: 9px; color: var(--cal-custom-text); font-weight: bold; margin-top: 2px; }
+
+        .month-navigation { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .month-navigation button { background: var(--btn-sort-bg); color: var(--text-main); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
+
+        #overlay, #overlaySettings, #overlayDelete { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 998; display: none; }
+        .popup-warning { position: fixed; bottom: 0; left: 50%; transform: translate(-50%, 100%); width: 100%; max-width: 500px; background: var(--bg-container); padding: 25px 25px calc(30px + env(safe-area-inset-bottom)) 25px; border-radius: 25px 25px 0 0; z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-top: 1px solid var(--border-color); visibility: hidden; overflow-y: auto; max-height: 90vh; }
+        .popup-warning.active { transform: translate(-50%, 0); visibility: visible; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-sub); }
+        .form-group input, .form-group select { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-main); font-size: 16px; outline: none; }
+        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 id="mainTitle">Bảng Chấm Công</h1>
+    <div class="month-navigation">
+        <button onclick="changeMonth(-1)">❮</button>
+        <h2 id="currentMonthDisplay">...</h2>
+        <button onclick="changeMonth(1)">❯</button>
+    </div>
+
+    <div id="listView">
+        <button class="btn-sort" style="background: var(--btn-sort-bg); color: var(--text-main); border: none; padding: 10px 15px; border-radius: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px; margin-left: auto; margin-bottom: 10px;" onclick="toggleSort()">
+            <span id="sortIcon">↓</span> <span id="sortText">Mới nhất</span>
+        </button>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th id="thDate">Ngày</th><th id="thTime">Giờ</th><th id="thNote">Ghi chú</th><th></th></tr>
+                </thead>
+                <tbody id="salaryList"></tbody>
+            </table>
+            <div id="noDataMessage" class="no-data hidden">Chưa có dữ liệu cho chu kỳ lương tháng này</div>
+        </div>
+    </div>
+
+    <div id="calendarView" class="hidden">
+        <div class="calendar-grid" id="calendarHeader"></div>
+        <div class="calendar-grid" id="calendarGrid" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="statsView" class="hidden">
+        <div style="background: var(--btn-sort-bg); padding: 20px; border-radius: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <div id="lblStatDays" style="font-size: 14px; font-weight: 600;">📅 Tổng ngày công</div><div style="font-size: 1.4rem; font-weight: 800; color: var(--accent);" id="statDays">0</div>
+        </div>
+        <div style="background: var(--btn-sort-bg); padding: 20px; border-radius: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <div id="lblStatHours" style="font-size: 14px; font-weight: 600;">⏰ Tổng số giờ</div><div style="font-size: 1.4rem; font-weight: 800; color: var(--accent);" id="statHours">0</div>
+        </div>
+        <div style="background: var(--btn-sort-bg); padding: 20px; border-radius: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <div id="lblStatMoney" style="font-size: 14px; font-weight: 600;">💰 Thu nhập dự tính</div><div style="font-size: 1.4rem; font-weight: 800; color: var(--accent);" id="statMoney">0</div>
+        </div>
+    </div>
+    <div id="totalSection" style="margin-top: 20px; padding: 20px 0; border-top: 1px solid var(--border-color); text-align: right;"></div>
+</div>
+
+<nav class="bottom-nav">
+    <button id="tab_list" class="tab-item active" onclick="switchView('list')">
+        <div class="tab-icon">📋</div><span id="label_list">Danh sách</span>
+    </button>
+    <button id="tab_calendar" class="tab-item" onclick="switchView('calendar')">
+        <div class="tab-icon">🗓️</div><span id="label_cal">Ma trận</span>
+    </button>
+    <button class="tab-item" onclick="openPopup()">
+        <div class="tab-item-add">➕</div>
+    </button>
+    <button id="tab_stats" class="tab-item" onclick="switchView('stats')">
+        <div class="tab-icon">📊</div><span id="label_stats">Thống kê</span>
+    </button>
+    <button id="tab_set" class="tab-item" onclick="openSettings()">
+        <div class="tab-icon">⚙️</div><span id="label_set">Cài đặt</span>
+    </button>
+</nav>
+
+<div id="overlaySettings" onclick="closeSettings()"></div>
+<div class="popup-warning" id="popupSettings">
+    <h3 id="set_title" style="color: #2196F3;">Cài đặt</h3>
+    <div class="form-group"><label id="set_rate">Lương/giờ</label><input type="number" id="hourlyRateInput"></div>
+    <div class="form-group"><label id="set_lang">Ngôn ngữ</label><select id="languageInput" onchange="applyLanguage()"><option value="vi">Tiếng Việt</option><option value="pl">Polski</option></select></div>
+    <div style="display: flex; align-items: center; gap: 15px; background: var(--btn-sort-bg); padding: 10px; border-radius: 12px; margin-bottom: 10px;">
+        <input type="color" id="calBgPicker"> <span id="lblCalBg">Nền ngày công</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 15px; background: var(--btn-sort-bg); padding: 10px; border-radius: 12px; margin-bottom: 10px;">
+        <input type="color" id="calTextPicker"> <span id="lblCalText">Màu chữ giờ</span>
+    </div>
+    <div class="form-group"><label id="set_theme">Giao diện</label><select id="themeInput"><option value="light">Sáng</option><option value="dark">Tối</option></select></div>
+    <div style="display:flex; align-items:center; gap:10px; margin:15px 0;"><input type="checkbox" id="showSalaryInput"><label id="set_show">Hiện lương</label></div>
+    <button id="btnSaveSet" onclick="saveSettings()" class="btn-main" style="background:#2196F3;">Lưu cài đặt</button>
+</div>
+
+<div id="overlay" onclick="closePopup()"></div>
+<div class="popup-warning" id="popup">
+    <h3 id="popupTitle">Cập nhật công</h3>
+    <input type="hidden" id="editIndex" value="-1">
+    <div class="form-group"><label id="lblDate">Ngày làm việc</label><input type="date" id="date"></div>
+    <div class="form-group"><label id="lblTime">Số giờ (h)</label><input type="number" id="time" step="0.5"></div>
+    <div class="form-group"><label id="lblNote">Ghi chú</label><input type="text" id="note"></div>
+    <button id="btnSaveData" onclick="save()" class="btn-main">Lưu dữ liệu</button>
+</div>
+
+<div id="overlayDelete" onclick="closeDeletePopup()"></div>
+<div class="popup-warning" id="popupDelete">
+    <h3 id="del_title">Xóa dữ liệu này?</h3>
+    <div style="display: flex; gap: 10px; margin-top: 25px;">
+        <button id="btnCancelDel" onclick="closeDeletePopup()" class="btn-main" style="background:#eee; color:#333;">Hủy</button>
+        <button id="btnConfirmDelete" class="btn-main" style="background:#ff4d4f;">Xóa ngay</button>
+    </div>
+</div>
+
+<audio id="tapSound" src="play.mp3" preload="auto"></audio>
+<audio id="phaoHoa" src="phaohoa.mp3" preload="auto"></audio>
+<audio id="Cancel" src="cancel.mp3" preload="auto"></audio>
+<audio id="Xoa" src="xoa.mp3" preload="auto"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+    let viewingDate = new Date();
+    let currentView = localStorage.getItem('app_view') || 'list';
+    let sortOrder = localStorage.getItem('app_sort') || 'desc';
+
+    const translations = {
+        vi: { 
+            mainTitle: "Bảng Chấm Công", list: "Danh sách", cal: "Ma trận", stats: "Thống kê", total: "Tổng công kỳ này", month: "Kỳ lương tháng", 
+            sort_new: "Mới nhất", sort_old: "Cũ nhất", thDate: "Ngày", thTime: "Giờ", thNote: "Ghi chú", set_title: "Cài đặt", 
+            no_data: "Chưa có dữ liệu cho chu kỳ lương tháng này", 
+            lblStatDays: "📅 Tổng ngày công", lblStatHours: "⏰ Tổng số giờ", lblStatMoney: "💰 Thu nhập dự tính",
+            set_rate: "Lương/giờ", set_lang: "Ngôn ngữ", set_theme: "Giao diện", set_show: "Hiện lương", 
+            lblCalBg: "Nền ngày công", lblCalText: "Màu chữ giờ", btnSaveSet: "Lưu cài đặt",
+            popupTitleAdd: "Thêm Ngày Công", popupTitleEdit: "Cập nhật công", lblDate: "Ngày làm việc", lblTime: "Số giờ (h)", lblNote: "Ghi chú", btnSaveData: "Lưu dữ liệu",
+            del_title: "Xóa dữ liệu này?", btnCancelDel: "Hủy", btnConfirmDelete: "Xóa ngay",
+            msg_exists: "Ngày công này đã tồn tại, bạn có muốn cập nhập nó không?",
+            days: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] 
+        },
+        pl: { 
+            mainTitle: "Karta Pracy", list: "Lista", cal: "Kalendarz", stats: "Statystyki", total: "Suma godzin", month: "Okres", 
+            sort_new: "Najnowsze", sort_old: "Najstarsze", thDate: "Data", thTime: "Godz", thNote: "Notatka", set_title: "Ustawienia", 
+            no_data: "Brak danych cho biểu đồ lương tháng này", 
+            lblStatDays: "📅 Suma dni", lblStatHours: "⏰ Suma godzin", lblStatMoney: "💰 Przewidywane zarobki",
+            set_rate: "Stawka/h", set_lang: "Język", set_theme: "Motyw", set_show: "Pokaż zarobki", 
+            lblCalBg: "Tło dnia", lblCalText: "Kolor tekstu", btnSaveSet: "Zapisz ustawienia",
+            popupTitleAdd: "Dodaj dzień", popupTitleEdit: "Edytuj dane", lblDate: "Data pracy", lblTime: "Liczba godzin", lblNote: "Notatka", btnSaveData: "Zapisz dane",
+            del_title: "Usunąć te dane?", btnCancelDel: "Anuluj", btnConfirmDelete: "Usuń teraz",
+            msg_exists: "Te dane już istnieją. Czy chcesz je zaktualizować?",
+            days: ["Nie", "Pon", "Wt", "Śr", "Czw", "Pią", "Sob"] 
+        }
+    };
+
+    function playSfx(id) { const s = document.getElementById(id); if(s) { s.currentTime = 0; s.play().catch(()=>{}); } }
+    function getLang() { return localStorage.getItem('app_lang') || 'vi'; }
+
+    function applyLanguage() { 
+        const t = translations[getLang()];
+        document.getElementById('mainTitle').innerText = t.mainTitle;
+        document.getElementById('label_list').innerText = t.list;
+        document.getElementById('label_cal').innerText = t.cal;
+        document.getElementById('label_stats').innerText = t.stats;
+        document.getElementById('label_set').innerText = t.set_title;
+        document.getElementById('thDate').innerText = t.thDate;
+        document.getElementById('thTime').innerText = t.thTime;
+        document.getElementById('thNote').innerText = t.thNote;
+        document.getElementById('lblStatDays').innerText = t.lblStatDays;
+        document.getElementById('lblStatHours').innerText = t.lblStatHours;
+        document.getElementById('lblStatMoney').innerText = t.lblStatMoney;
+        document.getElementById('set_title').innerText = t.set_title;
+        document.getElementById('set_rate').innerText = t.set_rate;
+        document.getElementById('set_lang').innerText = t.set_lang;
+        document.getElementById('set_theme').innerText = t.set_theme;
+        document.getElementById('set_show').innerText = t.set_show;
+        document.getElementById('lblCalBg').innerText = t.lblCalBg;
+        document.getElementById('lblCalText').innerText = t.lblCalText;
+        document.getElementById('btnSaveSet').innerText = t.btnSaveSet;
+        document.getElementById('lblDate').innerText = t.lblDate;
+        document.getElementById('lblTime').innerText = t.lblTime;
+        document.getElementById('lblNote').innerText = t.lblNote;
+        document.getElementById('btnSaveData').innerText = t.btnSaveData;
+        document.getElementById('del_title').innerText = t.del_title;
+        document.getElementById('btnCancelDel').innerText = t.btnCancelDel;
+        document.getElementById('btnConfirmDelete').innerText = t.btnConfirmDelete;
+    }
+
+    function displayData() {
+        const theme = localStorage.getItem('app_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        applyLanguage();
+        
+        const t = translations[getLang()];
+        document.getElementById('sortText').innerText = (sortOrder === 'desc') ? t.sort_new : t.sort_old;
+        document.getElementById('sortIcon').innerText = (sortOrder === 'desc') ? "↓" : "↑";
+
+        const listLuong = JSON.parse(localStorage.getItem('luong_thang')) || [];
+        const hourlyRate = parseFloat(localStorage.getItem('hourly_rate')) || 0;
+        const showMoney = localStorage.getItem('show_salary') !== 'false';
+
+        document.querySelectorAll('.tab-item').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tab_' + currentView).classList.add('active');
+
+        document.getElementById('listView').className = currentView === 'list' ? '' : 'hidden';
+        document.getElementById('calendarView').className = currentView === 'calendar' ? '' : 'hidden';
+        document.getElementById('statsView').className = currentView === 'stats' ? '' : 'hidden';
+
+        const targetYear = viewingDate.getFullYear();
+        const targetMonth = viewingDate.getMonth();
+        const startDate = new Date(targetYear, targetMonth - 1, 26);
+        const endDate = new Date(targetYear, targetMonth, 25, 23, 59, 59);
+
+        document.getElementById('currentMonthDisplay').innerText = `${t.month} ${targetMonth + 1} / ${targetYear}`;
+
+        const filtered = listLuong.filter(item => {
+            const d = new Date(item.date);
+            return d >= startDate && d <= endDate;
+        }).sort((a, b) => (sortOrder === 'desc' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date)));
+
+        const tableBody = document.getElementById('salaryList');
+        const noDataMsg = document.getElementById('noDataMessage');
+        tableBody.innerHTML = '';
+        
+        if (filtered.length === 0) {
+            noDataMsg.classList.remove('hidden');
+            noDataMsg.innerText = t.no_data;
+        } else {
+            noDataMsg.classList.add('hidden');
+        }
+
+        let totalHours = 0;
+        filtered.forEach(item => {
+            totalHours += parseFloat(item.time);
+            const originalIndex = listLuong.indexOf(item);
+            const d = item.date.split('-');
+            tableBody.innerHTML += `<tr>
+                <td><b>${d[2]}/${d[1]}</b></td>
+                <td>${item.time}h</td>
+                <td style="font-size:12px; color:var(--text-sub)">${item.note || ''}</td>
+                <td style="text-align:right">
+                    <button style="border:none; background:none; font-size:18px; color:var(--text-main)" onclick="editEntry(${originalIndex})">✎</button>
+                    <button style="border:none; background:none; font-size:18px; color:#ff4d4f; margin-left:8px;" onclick="deleteEntry(${originalIndex})">✕</button>
+                </td>
+            </tr>`;
+        });
+
+        document.getElementById('statDays').innerText = filtered.length;
+        document.getElementById('statHours').innerText = totalHours + 'h';
+        document.getElementById('statMoney').innerText = showMoney ? (totalHours * hourlyRate).toLocaleString() + ' zł' : '******';
+        
+        renderCalendar(targetYear, targetMonth, listLuong, t);
+        document.getElementById('totalSection').innerHTML = `
+            <div style="font-size: 14px; color: var(--text-sub);">${t.total}: ${totalHours}h</div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent);">${showMoney ? (totalHours * hourlyRate).toLocaleString() + ' zł' : '******'}</div>`;
+        
+        applyCustomColors();
+    }
+
+    function applyCustomColors() {
+        document.documentElement.style.setProperty('--cal-custom-bg', localStorage.getItem('cal_bg') || '#e3f2fd');
+        document.documentElement.style.setProperty('--cal-custom-text', localStorage.getItem('cal_text') || '#1976d2');
+    }
+
+    function renderCalendar(year, month, allData, t) {
+        const grid = document.getElementById('calendarGrid');
+        const head = document.getElementById('calendarHeader');
+        head.innerHTML = t.days.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+        grid.innerHTML = '';
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const work = allData.find(i => i.date === dateStr);
+            const isToday = (new Date()).toDateString() === (new Date(year, month, day)).toDateString();
+            grid.innerHTML += `<div class="cal-cell ${isToday?'today':''} ${work?'has-work':''}" onclick="clickDate('${dateStr}')">
+                    <span>${day}</span>
+                    ${work ? `<span class="work-hours">${work.time}h</span>` : ''}
+                </div>`;
+        }
+    }
+
+    // --- CẢI TIẾN HÀM MỞ POPUP & KIỂM TRA TRÙNG LẶP ---
+    function openPopup(d) { 
+        playSfx('tapSound');
+        const t = translations[getLang()];
+        const listLuong = JSON.parse(localStorage.getItem('luong_thang')) || [];
+        
+        // Xác định ngày mục tiêu: Nếu không truyền d (nhấn nút +) thì lấy ngày hiện tại
+        const targetDate = d ? d : new Date().toISOString().split('T')[0]; 
+        
+        // Kiểm tra xem ngày này đã tồn tại chưa
+        const existingIndex = listLuong.findIndex(item => item.date === targetDate);
+
+        if (existingIndex !== -1) {
+            // Nếu đã tồn tại -> Hỏi người dùng có muốn cập nhật không
+            if (confirm(t.msg_exists)) {
+                editEntry(existingIndex);
+            }
+            return; // Thoát hàm nếu trùng
+        }
+
+        // Chế độ thêm mới bình thường
+        document.getElementById('editIndex').value = "-1"; 
+        document.getElementById('popupTitle').innerText = t.popupTitleAdd;
+        document.getElementById('date').value = targetDate; 
+        document.getElementById('time').value = "";
+        document.getElementById('note').value = "";
+        document.getElementById('overlay').style.display = 'block'; 
+        document.getElementById('popup').classList.add('active'); 
+    }
+
+    function clickDate(d) { 
+        openPopup(d); 
+    }
+
+    function save() {
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        const note = document.getElementById('note').value;
+        if (!date || !time) return;
+        let list = JSON.parse(localStorage.getItem('luong_thang')) || [];
+        const idx = parseInt(document.getElementById('editIndex').value);
+        
+        if (idx === -1) {
+            list.push({date, time, note});
+        } else {
+            list[idx] = {date, time, note};
+        }
+        
+        localStorage.setItem('luong_thang', JSON.stringify(list));
+        playSfx('phaoHoa');
+        confetti({ particleCount: 60, spread: 50, origin: { y: 0.8 } });
+        displayData(); closePopup();
+    }
+
+    function editEntry(idx) {
+        playSfx('tapSound');
+        const t = translations[getLang()];
+        const item = (JSON.parse(localStorage.getItem('luong_thang')) || [])[idx];
+        document.getElementById('popupTitle').innerText = t.popupTitleEdit;
+        document.getElementById('date').value = item.date;
+        document.getElementById('time').value = item.time;
+        document.getElementById('note').value = item.note || "";
+        document.getElementById('editIndex').value = idx;
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('popup').classList.add('active');
+    }
+
+    function deleteEntry(idx) {
+        playSfx('tapSound');
+        document.getElementById('overlayDelete').style.display = 'block';
+        document.getElementById('popupDelete').classList.add('active');
+        document.getElementById('btnConfirmDelete').onclick = () => {
+            playSfx('Xoa');
+            let list = JSON.parse(localStorage.getItem('luong_thang')) || [];
+            list.splice(idx, 1);
+            localStorage.setItem('luong_thang', JSON.stringify(list));
+            displayData(); closeDeletePopup();
+        };
+    }
+
+    function toggleSort() { playSfx('tapSound'); sortOrder = (sortOrder === 'desc') ? 'asc' : 'desc'; localStorage.setItem('app_sort', sortOrder); displayData(); }
+    function closePopup() { playSfx('Cancel'); document.getElementById('overlay').style.display = 'none'; document.getElementById('popup').classList.remove('active'); }
+    
+    function openSettings() { 
+        playSfx('tapSound');
+        document.getElementById('hourlyRateInput').value = localStorage.getItem('hourly_rate') || "";
+        document.getElementById('languageInput').value = getLang();
+        document.getElementById('themeInput').value = localStorage.getItem('app_theme') || 'light';
+        document.getElementById('showSalaryInput').checked = localStorage.getItem('show_salary') !== 'false';
+        document.getElementById('calBgPicker').value = localStorage.getItem('cal_bg') || '#e3f2fd';
+        document.getElementById('calTextPicker').value = localStorage.getItem('cal_text') || '#1976d2';
+        document.getElementById('overlaySettings').style.display = 'block'; 
+        document.getElementById('popupSettings').classList.add('active'); 
+    }
+    
+    function closeSettings() { playSfx('Cancel'); document.getElementById('overlaySettings').style.display = 'none'; document.getElementById('popupSettings').classList.remove('active'); }
+    function closeDeletePopup() { playSfx('Cancel'); document.getElementById('overlayDelete').style.display = 'none'; document.getElementById('popupDelete').classList.remove('active'); }
+    
+    function saveSettings() {
+        localStorage.setItem('hourly_rate', document.getElementById('hourlyRateInput').value);
+        localStorage.setItem('app_lang', document.getElementById('languageInput').value);
+        localStorage.setItem('app_theme', document.getElementById('themeInput').value);
+        localStorage.setItem('show_salary', document.getElementById('showSalaryInput').checked);
+        localStorage.setItem('cal_bg', document.getElementById('calBgPicker').value);
+        localStorage.setItem('cal_text', document.getElementById('calTextPicker').value);
+        playSfx('phaoHoa');
+        displayData(); closeSettings();
+    }
+
+    function changeMonth(s) { playSfx('tapSound'); viewingDate.setMonth(viewingDate.getMonth() + s); displayData(); }
+    function switchView(v) { playSfx('tapSound'); currentView = v; localStorage.setItem('app_view', v); displayData(); }
+
+    window.onload = displayData;
+</script>
+</body>
+</html>
